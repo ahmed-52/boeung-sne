@@ -1,1 +1,11 @@
-/avianv-env
+/birdc
+/node_modules
+__pycache__/
+dist/
+build/
+out/
+node_modules/
+venv/
+__pycache__/
+*.pyc
+
