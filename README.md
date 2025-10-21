@@ -4,7 +4,7 @@
 
 - **Mac/Linux**:
   ```bash
-  source birdjet-env/bin/activate
+  source birdc/bin/activate
   ```
 
 - **Windows (CMD)**:
