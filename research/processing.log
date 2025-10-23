@@ -1,0 +1,273 @@
+2025-10-23 19:07:23,195 - INFO - ======================================================================
+2025-10-23 19:07:23,196 - INFO - Starting audio processing pipeline
+2025-10-23 19:07:23,196 - INFO - Data directory: data/all-audio
+2025-10-23 19:07:23,196 - INFO - Output file: detections_master.csv
+2025-10-23 19:07:23,196 - INFO - Min confidence: 0.25
+2025-10-23 19:07:23,196 - INFO - ======================================================================
+2025-10-23 19:07:23,199 - INFO - Found 371 WAV files to process
+2025-10-23 19:07:23,199 - INFO - Initializing BirdNET analyzer...
+2025-10-23 19:07:23,529 - INFO - [1/371] Processing: 1_S7899_20250204_000000(UTC+7).wav
+2025-10-23 19:07:41,983 - INFO -   -> Found 5 detections
+2025-10-23 19:07:41,984 - INFO - [2/371] Processing: 1_S7899_20250204_001500(UTC+7).wav
+2025-10-23 19:07:56,830 - INFO -   -> No detections
+2025-10-23 19:07:56,831 - INFO - [3/371] Processing: 1_S7899_20250204_003000(UTC+7).wav
+2025-10-23 19:08:11,165 - INFO -   -> No detections
+2025-10-23 19:08:11,165 - INFO - [4/371] Processing: 1_S7899_20250204_004500(UTC+7).wav
+2025-10-23 19:08:25,948 - INFO -   -> Found 4 detections
+2025-10-23 19:08:25,949 - INFO - [5/371] Processing: 1_S7899_20250204_010000(UTC+7).wav
+2025-10-23 19:08:40,734 - INFO -   -> Found 8 detections
+2025-10-23 19:08:40,735 - INFO - [6/371] Processing: 1_S7899_20250204_011500(UTC+7).wav
+2025-10-23 19:08:55,917 - INFO -   -> Found 23 detections
+2025-10-23 19:08:55,919 - INFO - [7/371] Processing: 1_S7899_20250204_013000(UTC+7).wav
+2025-10-23 19:09:10,542 - INFO -   -> Found 4 detections
+2025-10-23 19:09:10,543 - INFO - [8/371] Processing: 1_S7899_20250204_014500(UTC+7).wav
+2025-10-23 19:09:25,278 - INFO -   -> Found 5 detections
+2025-10-23 19:09:25,279 - INFO - [9/371] Processing: 1_S7899_20250204_020000(UTC+7).wav
+2025-10-23 19:09:39,728 - INFO -   -> Found 1 detections
+2025-10-23 19:09:39,729 - INFO - [10/371] Processing: 1_S7899_20250204_021500(UTC+7).wav
+2025-10-23 19:09:54,508 - INFO -   -> No detections
+2025-10-23 19:09:54,509 - INFO - [11/371] Processing: 1_S7899_20250204_023000(UTC+7).wav
+2025-10-23 19:10:09,235 - INFO -   -> No detections
+2025-10-23 19:10:09,236 - INFO - [12/371] Processing: 1_S7899_20250204_024500(UTC+7).wav
+2025-10-23 19:10:23,909 - INFO -   -> Found 1 detections
+2025-10-23 19:10:23,910 - INFO - [13/371] Processing: 1_S7899_20250204_030000(UTC+7).wav
+2025-10-23 19:10:38,645 - INFO -   -> No detections
+2025-10-23 19:10:38,645 - INFO - [14/371] Processing: 1_S7899_20250204_031500(UTC+7).wav
+2025-10-23 19:10:53,215 - INFO -   -> No detections
+2025-10-23 19:10:53,216 - INFO - [15/371] Processing: 1_S7899_20250204_033000(UTC+7).wav
+2025-10-23 19:11:07,709 - INFO -   -> Found 1 detections
+2025-10-23 19:11:07,710 - INFO - [16/371] Processing: 1_S7899_20250204_034500(UTC+7).wav
+2025-10-23 19:11:22,271 - INFO -   -> Found 1 detections
+2025-10-23 19:11:22,272 - INFO - [17/371] Processing: 1_S7899_20250204_040000(UTC+7).wav
+2025-10-23 19:11:37,034 - INFO -   -> No detections
+2025-10-23 19:11:37,035 - INFO - [18/371] Processing: 1_S7899_20250204_041500(UTC+7).wav
+2025-10-23 19:11:51,728 - INFO -   -> No detections
+2025-10-23 19:11:51,729 - INFO - [19/371] Processing: 1_S7899_20250204_043000(UTC+7).wav
+2025-10-23 19:12:06,341 - INFO -   -> No detections
+2025-10-23 19:12:06,342 - INFO - [20/371] Processing: 1_S7899_20250204_044500(UTC+7).wav
+2025-10-23 19:12:21,054 - INFO -   -> Found 3 detections
+2025-10-23 19:12:21,054 - INFO - [21/371] Processing: 1_S7899_20250204_050000(UTC+7).wav
+2025-10-23 19:12:35,578 - INFO -   -> Found 3 detections
+2025-10-23 19:12:35,579 - INFO - [22/371] Processing: 1_S7899_20250204_051500(UTC+7).wav
+2025-10-23 19:12:50,104 - INFO -   -> Found 1 detections
+2025-10-23 19:12:50,106 - INFO - [23/371] Processing: 1_S7899_20250204_053000(UTC+7).wav
+2025-10-23 19:13:04,775 - INFO -   -> Found 5 detections
+2025-10-23 19:13:04,777 - INFO - [24/371] Processing: 1_S7899_20250204_054500(UTC+7).wav
+2025-10-23 19:13:19,388 - INFO -   -> Found 13 detections
+2025-10-23 19:13:19,388 - INFO - [25/371] Processing: 1_S7899_20250204_060000(UTC+7).wav
+2025-10-23 19:13:33,919 - INFO -   -> Found 14 detections
+2025-10-23 19:13:33,920 - INFO - [26/371] Processing: 1_S7899_20250204_063011(UTC+7).wav
+2025-10-23 19:13:48,274 - INFO -   -> Found 6 detections
+2025-10-23 19:13:48,275 - INFO - [27/371] Processing: 1_S7899_20250204_064500(UTC+7).wav
+2025-10-23 19:14:03,016 - INFO -   -> No detections
+2025-10-23 19:14:03,017 - INFO - [28/371] Processing: 1_S7899_20250204_070000(UTC+7).wav
+2025-10-23 19:14:17,605 - INFO -   -> Found 32 detections
+2025-10-23 19:14:17,607 - INFO - [29/371] Processing: 1_S7899_20250204_071500(UTC+7).wav
+2025-10-23 19:14:32,262 - INFO -   -> Found 44 detections
+2025-10-23 19:14:32,262 - INFO - [30/371] Processing: 1_S7899_20250204_073000(UTC+7).wav
+2025-10-23 19:14:46,929 - INFO -   -> Found 45 detections
+2025-10-23 19:14:46,930 - INFO - [31/371] Processing: 1_S7899_20250204_074500(UTC+7).wav
+2025-10-23 19:15:01,647 - INFO -   -> Found 21 detections
+2025-10-23 19:15:01,648 - INFO - [32/371] Processing: 1_S7899_20250204_080000(UTC+7).wav
+2025-10-23 19:15:16,401 - INFO -   -> Found 21 detections
+2025-10-23 19:15:16,401 - INFO - [33/371] Processing: 1_S7899_20250204_081500(UTC+7).wav
+2025-10-23 19:15:31,197 - INFO -   -> Found 32 detections
+2025-10-23 19:15:31,198 - INFO - [34/371] Processing: 1_S7899_20250204_083000(UTC+7).wav
+2025-10-23 19:15:45,987 - INFO -   -> Found 32 detections
+2025-10-23 19:15:45,988 - INFO - [35/371] Processing: 1_S7899_20250204_084500(UTC+7).wav
+2025-10-23 19:16:00,703 - INFO -   -> Found 26 detections
+2025-10-23 19:16:00,704 - INFO - [36/371] Processing: 1_S7899_20250204_090000(UTC+7).wav
+2025-10-23 19:16:15,276 - INFO -   -> Found 31 detections
+2025-10-23 19:16:15,277 - INFO - [37/371] Processing: 1_S7899_20250204_091500(UTC+7).wav
+2025-10-23 19:16:29,890 - INFO -   -> Found 11 detections
+2025-10-23 19:16:29,890 - INFO - [38/371] Processing: 1_S7899_20250204_093000(UTC+7).wav
+2025-10-23 19:16:44,612 - INFO -   -> Found 47 detections
+2025-10-23 19:16:44,613 - INFO - [39/371] Processing: 1_S7899_20250204_094500(UTC+7).wav
+2025-10-23 19:16:59,345 - INFO -   -> Found 25 detections
+2025-10-23 19:16:59,346 - INFO - [40/371] Processing: 1_S7899_20250204_100000(UTC+7).wav
+2025-10-23 19:17:14,138 - INFO -   -> Found 24 detections
+2025-10-23 19:17:14,138 - INFO - [41/371] Processing: 1_S7899_20250204_101500(UTC+7).wav
+2025-10-23 19:17:28,743 - INFO -   -> Found 24 detections
+2025-10-23 19:17:28,744 - INFO - [42/371] Processing: 1_S7899_20250204_103000(UTC+7).wav
+2025-10-23 19:17:43,325 - INFO -   -> Found 27 detections
+2025-10-23 19:17:43,326 - INFO - [43/371] Processing: 1_S7899_20250204_104500(UTC+7).wav
+2025-10-23 19:17:57,806 - INFO -   -> Found 13 detections
+2025-10-23 19:17:57,807 - INFO - [44/371] Processing: 1_S7899_20250204_110000(UTC+7).wav
+2025-10-23 19:18:12,599 - INFO -   -> Found 41 detections
+2025-10-23 19:18:12,599 - INFO - [45/371] Processing: 1_S7899_20250204_111500(UTC+7).wav
+2025-10-23 19:18:27,601 - INFO -   -> Found 14 detections
+2025-10-23 19:18:27,602 - INFO - [46/371] Processing: 1_S7899_20250204_113000(UTC+7).wav
+2025-10-23 19:18:42,417 - INFO -   -> Found 13 detections
+2025-10-23 19:18:42,419 - INFO - [47/371] Processing: 1_S7899_20250204_114500(UTC+7).wav
+2025-10-23 19:18:57,013 - INFO -   -> Found 1 detections
+2025-10-23 19:18:57,015 - INFO - [48/371] Processing: 1_S7899_20250204_120000(UTC+7).wav
+2025-10-23 19:19:11,578 - INFO -   -> Found 4 detections
+2025-10-23 19:19:11,578 - INFO - [49/371] Processing: 1_S7899_20250204_121500(UTC+7).wav
+2025-10-23 19:19:26,193 - INFO -   -> Found 7 detections
+2025-10-23 19:19:26,194 - INFO - [50/371] Processing: 1_S7899_20250204_123000(UTC+7).wav
+2025-10-23 19:19:40,985 - INFO -   -> Found 16 detections
+2025-10-23 19:19:41,017 - INFO - Checkpoint saved: 649 records
+2025-10-23 19:19:41,018 - INFO - [51/371] Processing: 1_S7899_20250204_124500(UTC+7).wav
+2025-10-23 19:19:55,630 - INFO -   -> Found 5 detections
+2025-10-23 19:19:55,631 - INFO - [52/371] Processing: 1_S7899_20250204_130000(UTC+7).wav
+2025-10-23 19:20:10,202 - INFO -   -> Found 3 detections
+2025-10-23 19:20:10,203 - INFO - [53/371] Processing: 1_S7899_20250204_131500(UTC+7).wav
+2025-10-23 19:20:24,687 - INFO -   -> Found 1 detections
+2025-10-23 19:20:24,687 - INFO - [54/371] Processing: 1_S7899_20250204_133000(UTC+7).wav
+2025-10-23 19:20:39,427 - INFO -   -> Found 8 detections
+2025-10-23 19:20:39,428 - INFO - [55/371] Processing: 1_S7899_20250204_134500(UTC+7).wav
+2025-10-23 19:20:54,022 - INFO -   -> Found 15 detections
+2025-10-23 19:20:54,022 - INFO - [56/371] Processing: 1_S7899_20250204_140000(UTC+7).wav
+2025-10-23 19:21:08,707 - INFO -   -> Found 2 detections
+2025-10-23 19:21:08,708 - INFO - [57/371] Processing: 1_S7899_20250204_141500(UTC+7).wav
+2025-10-23 19:21:23,331 - INFO -   -> Found 12 detections
+2025-10-23 19:21:23,332 - INFO - [58/371] Processing: 1_S7899_20250204_143000(UTC+7).wav
+2025-10-23 19:21:37,774 - INFO -   -> Found 6 detections
+2025-10-23 19:21:37,775 - INFO - [59/371] Processing: 1_S7899_20250204_144500(UTC+7).wav
+2025-10-23 19:21:52,366 - INFO -   -> Found 16 detections
+2025-10-23 19:21:52,367 - INFO - [60/371] Processing: 1_S7899_20250204_150000(UTC+7).wav
+2025-10-23 19:22:06,946 - INFO -   -> Found 7 detections
+2025-10-23 19:22:06,946 - INFO - [61/371] Processing: 1_S7899_20250204_151500(UTC+7).wav
+2025-10-23 19:22:21,680 - INFO -   -> Found 8 detections
+2025-10-23 19:22:21,681 - INFO - [62/371] Processing: 1_S7899_20250204_153000(UTC+7).wav
+2025-10-23 19:22:36,457 - INFO -   -> Found 34 detections
+2025-10-23 19:22:36,457 - INFO - [63/371] Processing: 1_S7899_20250204_154500(UTC+7).wav
+2025-10-23 19:22:51,067 - INFO -   -> Found 36 detections
+2025-10-23 19:22:51,068 - INFO - [64/371] Processing: 1_S7899_20250204_160000(UTC+7).wav
+2025-10-23 19:23:05,722 - INFO -   -> Found 22 detections
+2025-10-23 19:23:05,723 - INFO - [65/371] Processing: 1_S7899_20250204_161500(UTC+7).wav
+2025-10-23 19:23:20,330 - INFO -   -> Found 18 detections
+2025-10-23 19:23:20,331 - INFO - [66/371] Processing: 1_S7899_20250204_163000(UTC+7).wav
+2025-10-23 19:23:34,875 - INFO -   -> Found 26 detections
+2025-10-23 19:23:34,876 - INFO - [67/371] Processing: 1_S7899_20250204_164500(UTC+7).wav
+2025-10-23 19:23:49,763 - INFO -   -> Found 11 detections
+2025-10-23 19:23:49,765 - INFO - [68/371] Processing: 1_S7899_20250204_170000(UTC+7).wav
+2025-10-23 19:24:04,306 - INFO -   -> Found 25 detections
+2025-10-23 19:24:04,307 - INFO - [69/371] Processing: 1_S7899_20250204_171500(UTC+7).wav
+2025-10-23 19:24:19,020 - INFO -   -> Found 29 detections
+2025-10-23 19:24:19,022 - INFO - [70/371] Processing: 1_S7899_20250204_173000(UTC+7).wav
+2025-10-23 19:24:33,573 - INFO -   -> Found 24 detections
+2025-10-23 19:24:33,573 - INFO - [71/371] Processing: 1_S7899_20250204_174500(UTC+7).wav
+2025-10-23 19:24:48,339 - INFO -   -> Found 3 detections
+2025-10-23 19:24:48,340 - INFO - [72/371] Processing: 1_S7899_20250204_180000(UTC+7).wav
+2025-10-23 19:25:03,198 - INFO -   -> Found 54 detections
+2025-10-23 19:25:03,199 - INFO - [73/371] Processing: 1_S7899_20250204_181500(UTC+7).wav
+2025-10-23 19:25:17,949 - INFO -   -> Found 62 detections
+2025-10-23 19:25:17,950 - INFO - [74/371] Processing: 1_S7899_20250204_183000(UTC+7).wav
+2025-10-23 19:25:32,442 - INFO -   -> Found 99 detections
+2025-10-23 19:25:32,443 - INFO - [75/371] Processing: 1_S7899_20250204_184500(UTC+7).wav
+2025-10-23 19:25:47,184 - INFO -   -> Found 114 detections
+2025-10-23 19:25:47,184 - INFO - [76/371] Processing: 1_S7899_20250204_190000(UTC+7).wav
+2025-10-23 19:26:01,695 - INFO -   -> Found 81 detections
+2025-10-23 19:26:01,696 - INFO - [77/371] Processing: 1_S7899_20250204_191500(UTC+7).wav
+2025-10-23 19:26:16,456 - INFO -   -> Found 33 detections
+2025-10-23 19:26:16,457 - INFO - [78/371] Processing: 1_S7899_20250204_193000(UTC+7).wav
+2025-10-23 19:26:31,030 - INFO -   -> Found 35 detections
+2025-10-23 19:26:31,030 - INFO - [79/371] Processing: 1_S7899_20250204_194500(UTC+7).wav
+2025-10-23 19:26:45,867 - INFO -   -> Found 20 detections
+2025-10-23 19:26:45,868 - INFO - [80/371] Processing: 1_S7899_20250204_200000(UTC+7).wav
+2025-10-23 19:27:00,501 - INFO -   -> Found 12 detections
+2025-10-23 19:27:00,503 - WARNING - [81/371] Skipped (invalid filename): 1_S7899_20250206_163000(+0700).wav
+2025-10-23 19:27:00,503 - INFO - [82/371] Processing: 3_S7901_20250204_000000(UTC+7).wav
+2025-10-23 19:27:14,998 - INFO -   -> No detections
+2025-10-23 19:27:14,999 - INFO - [83/371] Processing: 3_S7901_20250204_001500(UTC+7).wav
+2025-10-23 19:27:29,643 - INFO -   -> Found 1 detections
+2025-10-23 19:27:29,644 - INFO - [84/371] Processing: 3_S7901_20250204_003000(UTC+7).wav
+2025-10-23 19:27:44,252 - INFO -   -> No detections
+2025-10-23 19:27:44,253 - INFO - [85/371] Processing: 3_S7901_20250204_004500(UTC+7).wav
+2025-10-23 19:27:58,831 - INFO -   -> Found 4 detections
+2025-10-23 19:27:58,832 - INFO - [86/371] Processing: 3_S7901_20250204_010000(UTC+7).wav
+2025-10-23 19:28:13,526 - INFO -   -> Found 32 detections
+2025-10-23 19:28:13,526 - INFO - [87/371] Processing: 3_S7901_20250204_011500(UTC+7).wav
+2025-10-23 19:28:27,966 - INFO -   -> Found 3 detections
+2025-10-23 19:28:27,967 - INFO - [88/371] Processing: 3_S7901_20250204_013000(UTC+7).wav
+2025-10-23 19:28:42,438 - INFO -   -> Found 4 detections
+2025-10-23 19:28:42,439 - INFO - [89/371] Processing: 3_S7901_20250204_014500(UTC+7).wav
+2025-10-23 19:28:56,991 - INFO -   -> Found 19 detections
+2025-10-23 19:28:56,992 - INFO - [90/371] Processing: 3_S7901_20250204_020000(UTC+7).wav
+2025-10-23 19:29:11,636 - INFO -   -> No detections
+2025-10-23 19:29:11,637 - INFO - [91/371] Processing: 3_S7901_20250204_021500(UTC+7).wav
+2025-10-23 19:29:26,234 - INFO -   -> Found 2 detections
+2025-10-23 19:29:26,235 - INFO - [92/371] Processing: 3_S7901_20250204_023000(UTC+7).wav
+2025-10-23 19:29:40,662 - INFO -   -> No detections
+2025-10-23 19:29:40,663 - INFO - [93/371] Processing: 3_S7901_20250204_024500(UTC+7).wav
+2025-10-23 19:29:55,153 - INFO -   -> Found 1 detections
+2025-10-23 19:29:55,153 - INFO - [94/371] Processing: 3_S7901_20250204_030000(UTC+7).wav
+2025-10-23 19:30:09,784 - INFO -   -> No detections
+2025-10-23 19:30:09,784 - INFO - [95/371] Processing: 3_S7901_20250204_031500(UTC+7).wav
+2025-10-23 19:30:24,437 - INFO -   -> No detections
+2025-10-23 19:30:24,438 - INFO - [96/371] Processing: 3_S7901_20250204_033000(UTC+7).wav
+2025-10-23 19:30:39,013 - INFO -   -> No detections
+2025-10-23 19:30:39,014 - INFO - [97/371] Processing: 3_S7901_20250204_034500(UTC+7).wav
+2025-10-23 19:30:53,687 - INFO -   -> Found 2 detections
+2025-10-23 19:30:53,689 - INFO - [98/371] Processing: 3_S7901_20250204_040000(UTC+7).wav
+2025-10-23 19:31:08,129 - INFO -   -> No detections
+2025-10-23 19:31:08,130 - INFO - [99/371] Processing: 3_S7901_20250204_041500(UTC+7).wav
+2025-10-23 19:31:22,757 - INFO -   -> No detections
+2025-10-23 19:31:22,758 - INFO - [100/371] Processing: 3_S7901_20250204_043000(UTC+7).wav
+2025-10-23 19:31:37,310 - INFO -   -> Found 2 detections
+2025-10-23 19:31:37,310 - INFO - [101/371] Processing: 3_S7901_20250204_044500(UTC+7).wav
+2025-10-23 19:31:51,848 - INFO -   -> Found 2 detections
+2025-10-23 19:31:51,879 - INFO - Checkpoint saved: 1542 records
+2025-10-23 19:31:51,879 - INFO - [102/371] Processing: 3_S7901_20250204_050000(UTC+7).wav
+2025-10-23 19:32:06,439 - INFO -   -> Found 4 detections
+2025-10-23 19:32:06,440 - INFO - [103/371] Processing: 3_S7901_20250204_051500(UTC+7).wav
+2025-10-23 19:32:21,412 - INFO -   -> No detections
+2025-10-23 19:32:21,413 - INFO - [104/371] Processing: 3_S7901_20250204_053000(UTC+7).wav
+2025-10-23 19:32:36,160 - INFO -   -> Found 11 detections
+2025-10-23 19:32:36,160 - INFO - [105/371] Processing: 3_S7901_20250204_054500(UTC+7).wav
+2025-10-23 19:32:50,971 - INFO -   -> Found 19 detections
+2025-10-23 19:32:50,972 - INFO - [106/371] Processing: 3_S7901_20250204_060000(UTC+7).wav
+2025-10-23 19:33:05,709 - INFO -   -> Found 17 detections
+2025-10-23 19:33:05,710 - INFO - [107/371] Processing: 3_S7901_20250204_061845(UTC+7).wav
+2025-10-23 19:33:05,714 - ERROR - Failed to process 3_S7901_20250204_061845(UTC+7).wav: Generic audio read error occurred from librosa.
+2025-10-23 19:33:05,784 - INFO -   -> No detections
+2025-10-23 19:33:05,784 - INFO - [108/371] Processing: 3_S7901_20250204_061910(UTC+7).wav
+2025-10-23 19:33:14,440 - INFO -   -> Found 2 detections
+2025-10-23 19:33:14,441 - INFO - [109/371] Processing: 3_S7901_20250204_063000(UTC+7).wav
+2025-10-23 19:33:29,342 - INFO -   -> Found 1 detections
+2025-10-23 19:33:29,343 - INFO - [110/371] Processing: 3_S7901_20250204_064500(UTC+7).wav
+2025-10-23 19:33:43,936 - INFO -   -> Found 2 detections
+2025-10-23 19:33:43,937 - INFO - [111/371] Processing: 3_S7901_20250204_070000(UTC+7).wav
+2025-10-23 19:33:58,916 - INFO -   -> Found 32 detections
+2025-10-23 19:33:58,918 - INFO - [112/371] Processing: 3_S7901_20250204_071500(UTC+7).wav
+2025-10-23 19:34:13,561 - INFO -   -> Found 47 detections
+2025-10-23 19:34:13,563 - INFO - [113/371] Processing: 3_S7901_20250204_073000(UTC+7).wav
+2025-10-23 19:34:28,185 - INFO -   -> Found 42 detections
+2025-10-23 19:34:28,186 - INFO - [114/371] Processing: 3_S7901_20250204_074500(UTC+7).wav
+2025-10-23 19:34:42,856 - INFO -   -> Found 11 detections
+2025-10-23 19:34:42,857 - INFO - [115/371] Processing: 3_S7901_20250204_080000(UTC+7).wav
+2025-10-23 19:34:58,009 - INFO -   -> Found 19 detections
+2025-10-23 19:34:58,010 - INFO - [116/371] Processing: 3_S7901_20250204_081500(UTC+7).wav
+2025-10-23 19:35:12,787 - INFO -   -> Found 41 detections
+2025-10-23 19:35:12,787 - INFO - [117/371] Processing: 3_S7901_20250204_083000(UTC+7).wav
+2025-10-23 19:35:27,847 - INFO -   -> Found 45 detections
+2025-10-23 19:35:27,849 - INFO - [118/371] Processing: 3_S7901_20250204_084500(UTC+7).wav
+2025-10-23 19:35:42,752 - INFO -   -> Found 23 detections
+2025-10-23 19:35:42,753 - INFO - [119/371] Processing: 3_S7901_20250204_090000(UTC+7).wav
+2025-10-23 19:35:57,821 - INFO -   -> Found 39 detections
+2025-10-23 19:35:57,822 - INFO - [120/371] Processing: 3_S7901_20250204_091500(UTC+7).wav
+2025-10-23 19:36:12,867 - INFO -   -> Found 7 detections
+2025-10-23 19:36:12,869 - INFO - [121/371] Processing: 3_S7901_20250204_093000(UTC+7).wav
+2025-10-23 19:36:27,489 - INFO -   -> Found 31 detections
+2025-10-23 19:36:27,491 - INFO - [122/371] Processing: 3_S7901_20250204_094500(UTC+7).wav
+2025-10-23 19:36:42,348 - INFO -   -> Found 17 detections
+2025-10-23 19:36:42,349 - INFO - [123/371] Processing: 3_S7901_20250204_100000(UTC+7).wav
+2025-10-23 19:36:57,347 - INFO -   -> Found 18 detections
+2025-10-23 19:36:57,349 - INFO - [124/371] Processing: 3_S7901_20250204_101500(UTC+7).wav
+2025-10-23 19:37:12,088 - INFO -   -> Found 22 detections
+2025-10-23 19:37:12,089 - INFO - [125/371] Processing: 3_S7901_20250204_103000(UTC+7).wav
+2025-10-23 19:37:26,544 - INFO -   -> Found 22 detections
+2025-10-23 19:37:26,545 - INFO - [126/371] Processing: 3_S7901_20250204_104500(UTC+7).wav
+2025-10-23 19:37:41,734 - INFO -   -> Found 15 detections
+2025-10-23 19:37:41,736 - INFO - [127/371] Processing: 3_S7901_20250204_110000(UTC+7).wav
+2025-10-23 19:37:57,575 - INFO -   -> Found 26 detections
+2025-10-23 19:37:57,576 - INFO - [128/371] Processing: 3_S7901_20250204_111500(UTC+7).wav
+2025-10-23 19:38:13,380 - INFO -   -> Found 11 detections
+2025-10-23 19:38:13,382 - INFO - [129/371] Processing: 3_S7901_20250204_113000(UTC+7).wav
+2025-10-23 19:38:29,592 - INFO -   -> Found 19 detections
+2025-10-23 19:38:29,593 - INFO - [130/371] Processing: 3_S7901_20250204_114500(UTC+7).wav
+2025-10-23 19:38:44,447 - INFO -   -> Found 1 detections
+2025-10-23 19:38:44,448 - INFO - [131/371] Processing: 3_S7901_20250204_120000(UTC+7).wav
+2025-10-23 19:38:59,790 - INFO -   -> Found 8 detections
+2025-10-23 19:38:59,791 - INFO - [132/371] Processing: 3_S7901_20250204_121500(UTC+7).wav

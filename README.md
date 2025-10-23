@@ -13,4 +13,4 @@
   ```
 
 
-uvicorn main:app --reload
+python3 -m venv birdc

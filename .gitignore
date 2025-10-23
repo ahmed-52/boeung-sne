@@ -9,7 +9,12 @@ venv/
 __pycache__/
 *.pyc
 
+/data
+
 app/backend/models/birdnet/
 
 
 research/models/birdnet/
+
+research/data/
+
