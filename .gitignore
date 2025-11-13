@@ -18,6 +18,8 @@ research/models/birdnet/
 
 research/data/
 
-research/extractions 
+research/extractions/ 
 
-research/species_lists 
+research/aru/
+
+.DS_Store
