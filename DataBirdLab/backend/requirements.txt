@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlmodel
+python-multipart
+rasterio
+opencv-python-headless
+numpy
+ultralytics
+
+

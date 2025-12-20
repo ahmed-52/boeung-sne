@@ -8,12 +8,18 @@ research/models/birdnet/
 research/data/
 
 research/extractions/ 
+databirdlab/test/data
 
 research/aru/
 
 .DS_Store
-
-
 birdc
-
 birdc/bin
+databirdlab/backend/venv
+databirdlab/frontend/node_modules
+databirdlab/frontend/.DS_Store
+
+research/drones/data
+
+databirdlab/backend/static
+databirdlab/backend/app/static
