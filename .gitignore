@@ -23,3 +23,7 @@ research/drones/data
 
 databirdlab/backend/static
 databirdlab/backend/app/static
+DataBirdLab/backend/data/
+DataBirdLab/backend/weights/
+DataBirdLab/test/
+
