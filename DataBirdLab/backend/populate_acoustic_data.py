@@ -1,90 +1,129 @@
 import sys
 import os
 import random
-from datetime import datetime, timedelta
-from sqlmodel import Session, select
+import json
+from datetime import datetime
+from sqlmodel import Session, select, text
 
-# Add correct path for imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# --- 1. Setup Python Path to find your 'app' module ---
+# This allows the script to run from the root directory
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
 
-from app.database import engine, create_db_and_tables
-from app.models import Survey, MediaAsset, AcousticDetection
+# --- 2. Import your App's specific modules ---
+try:
+    from app.database import engine, create_db_and_tables
+    # Importing models ensures they are registered with SQLModel
+    from app.models import Survey, MediaAsset, VisualDetection, AcousticDetection
+except ImportError as e:
+    print("❌ Error: Could not import 'app'. Make sure this file is in the project root.")
+    print(f"Details: {e}")
+    sys.exit(1)
 
-def populate_acoustic_data():
+# --- Configuration ---
+ARU_LOCATIONS = [
+    {"lat": 11.40655, "lon": 105.39677, "name": "ARU_North_Station"},
+    {"lat": 11.40369, "lon": 105.39827, "name": "ARU_East_Wetland"},
+    {"lat": 11.40617, "lon": 105.39701, "name": "ARU_North_Backup"},
+]
+
+SPECIES = [
+    "asian_openbill", 
+    "black_headed_ibis", 
+    "painted_stork", 
+    "spot_billed_pelican", 
+    "little_cormorant"
+]
+
+def seed_data():
+    print("🌱 Connecting to database via SQLModel...")
+    
+    # Ensure tables exist
     create_db_and_tables()
-    
-    species_list = [
-        "Black-crowned Night-Heron",
-        "Cattle Egret",
-        "Eurasian Tree Sparrow",
-        "Little Egret",
-        "White-breasted Waterhen",
-        "Common Greenshank",
-        "Great Cormorant",
-        "Asian Openbill",
-        "Great Egret",
-        "House Sparrow"
-    ]
 
-    print("Starting data population...")
-    
     with Session(engine) as session:
-        # Generate data for the last 7 days
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=7)
-        
-        current_date = start_date
-        while current_date <= end_date:
-            print(f"Generating data for {current_date.date()}")
-            
-            # Create 2-4 surveys per day
-            num_surveys = random.randint(2, 4)
-            for _ in range(num_surveys):
-                # Random time for survey between 6 AM and 6 PM
-                survey_hour = random.randint(6, 18)
-                survey_time = current_date.replace(hour=survey_hour, minute=random.randint(0, 59))
-                
-                survey = Survey(
-                    name=f"Survey {survey_time.strftime('%Y-%m-%d %H:%M')}",
-                    date=survey_time,
-                    type="acoustic"
-                )
-                session.add(survey)
-                session.flush() # flush to get ID
-                
-                # Create 3-8 media assets per survey
-                num_assets = random.randint(3, 8)
-                for i in range(num_assets):
-                    asset = MediaAsset(
-                        survey_id=survey.id,
-                        file_path=f"/data/audio/rec_{survey.id}_{i}_{random.randint(1000,9999)}.wav",
-                        is_processed=True,
-                        lat_tl=11.40 + random.uniform(0, 0.01), # Approx loc from context
-                        lon_tl=105.39 + random.uniform(0, 0.01)
-                    )
-                    session.add(asset)
-                    session.flush()
-                    
-                    # Create 0-5 acoustic detections per asset
-                    num_detections = random.randint(0, 5)
-                    for _ in range(num_detections):
-                        detection_start = random.uniform(0, 60.0) # Assume 1 min recordings
-                        detection_duration = random.uniform(0.5, 5.0)
-                        
-                        detection = AcousticDetection(
-                            asset_id=asset.id,
-                            class_name=random.choice(species_list),
-                            confidence=random.uniform(0.65, 0.99),
-                            start_time=detection_start,
-                            end_time=detection_start + detection_duration,
-                            is_human_reviewed=random.choice([True, False])
-                        )
-                        session.add(detection)
-            
-            current_date += timedelta(days=1)
-        
+
+        # 2. Create Survey
+        survey = Survey(
+            name="ARU Survey",
+            date=datetime.now(),
+            type="Hybrid"
+        )
+        session.add(survey)
         session.commit()
-        print("Data population complete!")
+        session.refresh(survey)
+        print(f"✅ Created Survey: {survey.name} (ID: {survey.id})")
+
+        # 3. Create ARU Assets (Audio)
+        for i, aru in enumerate(ARU_LOCATIONS):
+            # Audio asset (Point source: TL = BR)
+            audio_asset = MediaAsset(
+                survey_id=survey.id,
+                file_path=f"/data/audio/aru_{i+1}.wav",
+                lat_tl=aru["lat"], lon_tl=aru["lon"],
+                lat_br=aru["lat"], lon_br=aru["lon"],
+                is_processed=True,
+                is_validated=True
+            )
+            session.add(audio_asset)
+            session.commit()
+            session.refresh(audio_asset)
+
+            # Add Acoustic Detections
+            num_detections = random.randint(3, 8)
+            for _ in range(num_detections):
+                detection = AcousticDetection(
+                    asset_id=audio_asset.id,
+                    class_name=random.choice(SPECIES),
+                    confidence=random.uniform(0.65, 0.99),
+                    start_time=random.uniform(0, 300),
+                    end_time=random.uniform(0, 300) + 3.0,
+                    is_human_reviewed=False
+                )
+                session.add(detection)
+        
+        print(f"✅ added ARU data.")
+
+        # 4. Create Drone Assets (Visual) NEAR the ARUs
+        for i, aru in enumerate(ARU_LOCATIONS):
+            for j in range(2):
+                # Offset coordinates slightly
+                lat_offset = random.uniform(-0.0002, 0.0002)
+                lon_offset = random.uniform(-0.0002, 0.0002)
+                img_lat = aru["lat"] + lat_offset
+                img_lon = aru["lon"] + lon_offset
+
+                visual_asset = MediaAsset(
+                    survey_id=survey.id,
+                    file_path=f"/data/images/tile_{i}_{j}.jpg",
+                    lat_tl=img_lat + 0.00005, lon_tl=img_lon - 0.00005,
+                    lat_br=img_lat - 0.00005, lon_br=img_lon + 0.00005,
+                    is_processed=True,
+                    is_validated=False
+                )
+                session.add(visual_asset)
+                session.commit()
+                session.refresh(visual_asset)
+
+                # Force a "Match" for the first item
+                if i == 0 and j == 0:
+                    det_species = "painted_stork"
+                else:
+                    det_species = random.choice(SPECIES)
+
+                # Add Visual Detection
+                bbox = [random.randint(100, 1000), random.randint(100, 1000), 50, 50]
+                visual_det = VisualDetection(
+                    asset_id=visual_asset.id,
+                    confidence=random.uniform(0.7, 0.95),
+                    class_name=det_species,
+                    bbox_json=json.dumps(bbox)
+                )
+                session.add(visual_det)
+
+        session.commit()
+        print(f"✅ Added Visual data.")
+        print("🚀 Database seeding complete!")
 
 if __name__ == "__main__":
-    populate_acoustic_data()
+    seed_data()

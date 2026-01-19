@@ -6,12 +6,27 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from sqlmodel import Session
 from app.database import engine, create_db_and_tables
-from app.models import Survey, MediaAsset, VisualDetection, AcousticDetection
-from pipeline.pipeline import run_drone_pipeline
-from typing import Optional
+from app.models import Survey, MediaAsset, VisualDetection, AcousticDetection, ARU, SystemSettings
 
+from typing import Optional
+from sqlmodel import select, func
+from datetime import timedelta
+from pipeline import PipelineManager
+
+
+import json
+
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="DataBirdLab API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 @app.on_event("startup")
 def on_startup():
@@ -22,69 +37,170 @@ def get_session():
     with Session(engine) as session:
         yield session
 
-from sqlmodel import select, func
-from datetime import timedelta
-
-
 
 
 @app.post("/api/surveys/import")
 async def import_survey(
-
     survey_name: str = Form(..., description="'Boeung Sne - Zone 2'"),
-    survey_date: str = Form(date.today().isoformat(), description="Optional date string, defaults to today's date"),
-    file: UploadFile = File(..., description="The Orthomosaic GeoTIFF"),
-    background_tasks: BackgroundTasks = None,
+    survey_type: str = Form(default="drone", description="Survey type: 'drone' or 'acoustic'"),
+    survey_date: Optional[str] = Form(default=None, description="Survey date in YYYY-MM-DD format"),
+    orthomosaics: list[UploadFile] = File(default=[], description="Orthomosaic GeoTIFF files"),
+    audio_files: list[UploadFile] = File(default=[], description="Audio files (.wav, .mp3, .flac)"),
+    audio_aru_mapping: Optional[str] = Form(default=None, description="JSON mapping of audio file index to ARU ID"),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     session: Session = Depends(get_session)
 ):
-
-
-    """
-    1. Creates a Survey entry in DB.
-    2. Saves the .tif file.
-    3. Triggers the Drone Pipeline in background.
-    """
-
-    print(f"Creating Survey: {survey_name}")
-    new_survey = Survey(
-        name=survey_name,
-        type="drone",
-
-    )
+    # Validate at least one file is provided
+    if not orthomosaics and not audio_files:
+        raise HTTPException(status_code=400, detail="At least one orthomosaic or audio file must be provided")
+    
+    # Parse survey date
+    from datetime import datetime
+    import re
+    parsed_date = None
+    
+    # For acoustic surveys, try to extract date from first audio filename
+    if survey_type == "acoustic" and audio_files:
+        first_audio = audio_files[0].filename
+        # Pattern: _YYYYMMDD_HHMMSS(...).wav
+        pattern = r"_(\d{8})_(\d{6})\("
+        match = re.search(pattern, first_audio)
+        if match:
+            date_str = match.group(1)  # YYYYMMDD
+            try:
+                parsed_date = datetime.strptime(date_str, "%Y%m%d")
+            except ValueError:
+                pass
+    
+    # Fallback: use provided date or today
+    if not parsed_date:
+        if survey_date:
+            try:
+                parsed_date = datetime.strptime(survey_date, "%Y-%m-%d")
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+        else:
+            parsed_date = datetime.now()
+    
+    # Parse audio ARU mapping
+    aru_mapping = {}
+    if audio_aru_mapping:
+        try:
+            aru_mapping = json.loads(audio_aru_mapping)
+            # Convert string keys to integers
+            aru_mapping = {int(k): v for k, v in aru_mapping.items()}
+        except (json.JSONDecodeError, ValueError):
+            raise HTTPException(status_code=400, detail="Invalid audio_aru_mapping format")
+    
+    # 1. Create Survey entry in DB with explicit type and date
+    new_survey = Survey(name=survey_name, type=survey_type, date=parsed_date)
     session.add(new_survey)
     session.commit()
-    session.refresh(new_survey) 
-
-
-    # Use absolute path for uploads to ensure it lands in backend/static/uploads
-    # BASE_DIR is backend/
-    upload_dir = BASE_DIR / "static" / "uploads" / f"survey_{new_survey.id}"
-    os.makedirs(upload_dir, exist_ok=True)
+    session.refresh(new_survey)
     
-
-    safe_filename = file.filename.replace(" ", "_")
-    file_location = os.path.join(upload_dir, safe_filename)
+    # 2. Create upload directory for this survey
+    upload_dir = Path("static/uploads") / f"survey_{new_survey.id}"
+    upload_dir.mkdir(parents=True, exist_ok=True)
     
-    print(f"💾 Saving file to: {file_location}")
+    uploaded_files = {"orthomosaics": [], "audio": []}
     
-    # Stream write
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # Process orthomosaic files
+    for file in orthomosaics:
+        # Validate file type
+        if not file.filename.lower().endswith(('.tif', '.tiff')):
+            continue
+            
+        safe_filename = file.filename.replace(" ", "_")
+        input_path = str(upload_dir / safe_filename)
+        
+        # Save file
+        with open(input_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Create MediaAsset entry
+        media_asset = MediaAsset(
+            survey_id=new_survey.id,
+            file_path=input_path,
+            is_processed=False
+        )
+        session.add(media_asset)
+        session.commit()
+        session.refresh(media_asset)
 
-    # Pipeline
-    print("🚀 Triggering Background Pipeline")
-    background_tasks.add_task(
-        run_drone_pipeline, 
-        survey_id=new_survey.id, 
-        orthomosaic_path=file_location
-    )
+        # Prepare tile output directory
+        tile_dir = Path("static/tiles") / f"survey_{new_survey.id}"
+        tile_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Trigger drone processing pipeline in background
+        background_tasks.add_task(
+            execute_pipeline_task,
+            survey_id=new_survey.id,
+            input_path=input_path,
+            output_dir=str(tile_dir)
+        )
+        
+        uploaded_files["orthomosaics"].append({
+            "filename": safe_filename,
+            "asset_id": media_asset.id
+        })
+    
+    # Create audio subdirectory
+    audio_dir = upload_dir / "audio"
+    audio_dir.mkdir(exist_ok=True)
+    
+    # Process audio files
+    for index, file in enumerate(audio_files):
+        # Validate file type
+        if not file.filename.lower().endswith(('.wav', '.mp3', '.flac')):
+            continue
+            
+        safe_filename = file.filename.replace(" ", "_")
+        input_path = str(audio_dir / safe_filename)
+        
+        # Save file
+        with open(input_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Get ARU ID for this audio file
+        file_aru_id = aru_mapping.get(index)
+        
+        # Trigger acoustic processing pipeline in background
+        background_tasks.add_task(
+            execute_acoustic_pipeline_task,
+            survey_id=new_survey.id,
+            input_path=input_path,
+            aru_id=file_aru_id
+        )
+        
+        uploaded_files["audio"].append({
+            "filename": safe_filename
+        })
 
     return {
         "status": "success",
-        "message": "Survey created and processing started.",
         "survey_id": new_survey.id,
-        "survey_name": new_survey.name
+        "message": f"Uploaded {len(uploaded_files['orthomosaics'])} orthomosaic(s) and {len(uploaded_files['audio'])} audio file(s). Processing...",
+        "uploaded_files": uploaded_files
     }
+
+def execute_pipeline_task(survey_id: int, input_path: str, output_dir: str):
+    """Execution wrapper for BackgroundTasks"""
+    manager = PipelineManager(pipeline_type="drone")
+    manager.run_survey_processing(
+        survey_id=survey_id, 
+        input_path=input_path, 
+        output_dir=output_dir
+    )
+
+def execute_acoustic_pipeline_task(survey_id: int, input_path: str, aru_id: Optional[int] = None):
+    """Execution wrapper for acoustic processing BackgroundTasks"""
+    manager = PipelineManager(pipeline_type="birdnet")
+    manager.run_survey_processing(
+        survey_id=survey_id,
+        input_path=input_path,
+        output_dir=None,  # Audio doesn't need output_dir
+        aru_id=aru_id
+    )
 
 
 @app.get("/api/surveys/{survey_id}/status")
@@ -115,6 +231,30 @@ def get_survey_status(survey_id: int, session: Session = Depends(get_session)):
     }
 
 
+# --- ARU Endpoints ---
+
+@app.get("/api/arus")
+def get_arus(session: Session = Depends(get_session)):
+    """Get all ARU locations"""
+    arus = session.exec(select(ARU)).all()
+    return arus
+
+
+@app.post("/api/arus")
+def create_aru(
+    name: str = Form(...),
+    lat: float = Form(...),
+    lon: float = Form(...),
+    session: Session = Depends(get_session)
+):
+    """Create a new ARU location"""
+    new_aru = ARU(name=name, lat=lat, lon=lon)
+    session.add(new_aru)
+    session.commit()
+    session.refresh(new_aru)
+    return new_aru
+
+
 @app.get("/api/surveys")
 def get_surveys(session: Session = Depends(get_session)):
     surveys = session.exec(select(Survey).order_by(Survey.date.desc())).all()
@@ -122,35 +262,37 @@ def get_surveys(session: Session = Depends(get_session)):
     results = []
     for s in surveys:
         # Calculate bounds
-        # min_lat, max_lat, min_lon, max_lon
-        # This is a bit heavy if many assets, but let's do it
-        
-        # We need to query MediaAsset for this survey
-        # Using SQLModel direct query for aggregation is cleaner but let's stick to python for speed of dev if list is small
-        # Actually, let's use SQL for performance
-        
         bounds = session.exec(
             select(
                 func.min(MediaAsset.lat_tl),
-                func.max(MediaAsset.lat_br), # BR is usually lower lat, but check logic
+                func.max(MediaAsset.lat_br),
                 func.min(MediaAsset.lon_tl),
                 func.max(MediaAsset.lon_br)
             ).where(MediaAsset.survey_id == s.id)
         ).first()
         
-        # Determine actual NESW
-        # Lat: usually TL > BR in northern hemisphere? 
-        # Actually our models.py says: lat_tl, lat_br. 
-        # Standard: min_lat is south, max_lat is north.
-        
-        # If no assets, bounds is (None, None, None, None)
+        # Get linked ARU info for acoustic surveys
+        aru_info = None
+        if s.type == "acoustic":
+            # Find first ARU linked to this survey's media assets
+            aru_asset = session.exec(
+                select(MediaAsset)
+                .where(MediaAsset.survey_id == s.id, MediaAsset.aru_id.is_not(None))
+            ).first()
+            if aru_asset and aru_asset.aru:
+                aru_info = {
+                    "id": aru_asset.aru.id,
+                    "name": aru_asset.aru.name
+                }
         
         results.append({
             "id": s.id,
             "name": s.name,
             "date": s.date,
+            "type": s.type,
+            "aru": aru_info,
             "bounds": {
-                "min_lat": bounds[1] if bounds[1] is not None else None, # Assuming BR is min? Let's treat raw min/max
+                "min_lat": bounds[1] if bounds[1] is not None else None,
                 "max_lat": bounds[0] if bounds[0] is not None else None,
                 "min_lon": bounds[2] if bounds[2] is not None else None,
                 "max_lon": bounds[3] if bounds[3] is not None else None
@@ -439,6 +581,483 @@ def get_overview_stats(
         "avg_confidence": avg_conf if avg_conf else 0.0,
         "storage_used": f"{area_hectares:.2f} ha" # Re-purposing this field or adding new
     }
+
+@app.get("/api/detections/visual")
+def get_visual_detections(
+    session: Session = Depends(get_session),
+    days: int = 7,
+    survey_ids: Optional[str] = None # comma separated, e.g "1,2,3"
+):
+    """
+    Returns individual visual detections for the map/inspector.
+    """
+    cutoff_date = date.today() - timedelta(days=days)
+    
+    query = (
+        select(VisualDetection, MediaAsset, Survey)
+        .join(MediaAsset, VisualDetection.asset_id == MediaAsset.id)
+        .join(Survey, MediaAsset.survey_id == Survey.id)
+        .where(Survey.date >= cutoff_date)
+    )
+    
+    if survey_ids:
+        try:
+            ids = [int(x) for x in survey_ids.split(",") if x.strip()]
+            if ids:
+                query = query.where(Survey.id.in_(ids))
+        except ValueError:
+            pass # Ignore invalid format
+
+    results = session.exec(query).all()
+    
+    data = []
+    
+    # Pre-define IMG dims
+    IMG_W, IMG_H = 1280, 1280
+    
+    for det, asset, survey in results:
+        # Interpolate Lat/Lon
+        try:
+            if not asset.lat_tl or not asset.lat_br or not asset.lon_tl or not asset.lon_br:
+                continue
+
+            lat_diff = asset.lat_br - asset.lat_tl
+            lon_diff = asset.lon_br - asset.lon_tl
+            
+            bbox_list = json.loads(det.bbox_json)
+            # YOLO Format: [center_x, center_y, width, height] (Normalized 0-1)
+            cx, cy, w, h = bbox_list
+            
+            # Convert to Top-Left for bounding box drawing (if needed) but keep center for geo
+            # cx is normalized (0-1)
+            
+            # Interpolate Geo-Coordinates based on Center of Box
+            det_lat = asset.lat_tl + (cy * lat_diff)
+            det_lon = asset.lon_tl + (cx * lon_diff)
+            
+            # Construct Image URL
+            # stored path is likely "static/tiles/survey_ID/..."
+            img_path = asset.file_path
+            if not img_path.startswith("/"):
+                img_path = "/" + img_path
+            
+            # Ensure it starts with /static if the stored path is relative like "static/..."
+            # If stored as "static/tiles...", and we access via "/static/tiles...", we need leading /
+            
+            data.append({
+                "id": f"vis-{det.id}",
+                "species": det.class_name,
+                "confidence": det.confidence,
+                "lat": det_lat,
+                "lon": det_lon,
+                "bbox": {"cx": cx, "cy": cy, "w": w, "h": h}, # Send standard YOLO format
+                "imageUrl": img_path, 
+                "timestamp": survey.date.isoformat(),
+                "survey_id": survey.id,
+                "survey_name": survey.name,
+                "asset_id": asset.id 
+            })
+            
+        except Exception as e:
+            continue
+            
+    return data
+
+@app.get("/api/detections/acoustic")
+def get_acoustic_detections(
+    session: Session = Depends(get_session),
+    days: int = 7,
+    survey_ids: Optional[str] = None # comma separated
+):
+    """
+    Returns individual acoustic detections for the map/inspector.
+    """
+    cutoff_date = date.today() - timedelta(days=days)
+    
+    query = (
+        select(AcousticDetection, MediaAsset, Survey)
+        .join(MediaAsset, AcousticDetection.asset_id == MediaAsset.id)
+        .join(Survey, MediaAsset.survey_id == Survey.id)
+        .where(Survey.date >= cutoff_date)
+    )
+    
+    if survey_ids:
+        try:
+            ids = [int(x) for x in survey_ids.split(",") if x.strip()]
+            if ids:
+                query = query.where(Survey.id.in_(ids))
+        except ValueError:
+            pass
+
+    results = session.exec(query).all()
+    
+    data = []
+    
+    for det, asset, survey in results:
+        # Acoustic detections use the Audio Asset location (Point)
+        # lat_tl/lon_tl should be the station location
+        if not asset.lat_tl or not asset.lon_tl:
+            continue
+            
+        # Timestamp: Survey Date + Start Time offset?
+        # Survey.date is datetime. start_time is float seconds.
+        # We can construct a rough timestamp
+        det_time = survey.date + timedelta(seconds=det.start_time)
+        
+        data.append({
+             "id": f"audio-{det.id}",
+             "species": det.class_name,
+             "confidence": det.confidence,
+             "lat": asset.lat_tl, # Station lat
+             "lon": asset.lon_tl, # Station lon
+             "radius": 50, # Hardcoded range for now
+             "timestamp": det_time.isoformat(),
+             "audioUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", # Placeholder
+             "aru_id": asset.aru_id,  # Add ARU ID
+             "survey_id": survey.id   # Add Survey ID
+        })
+        
+    return data
+
+
+# --- New Endpoints for Charts ---
+
+@app.get("/api/surveys/{survey_id}/arus")
+def get_survey_arus(
+    survey_id: int,
+    session: Session = Depends(get_session)
+):
+    """
+    Returns list of ARU (Audio) assets for a specific survey.
+    """
+    # Find assets with .wav extension indicating ARU
+    assets = session.exec(
+        select(MediaAsset)
+        .where(MediaAsset.survey_id == survey_id)
+        .where(MediaAsset.file_path.like("%wav"))
+    ).all()
+    
+    arus = []
+    for asset in assets:
+        name = f"Station #{asset.id}"
+        arus.append({
+            "id": asset.id,
+            "name": name,
+            "lat": asset.lat_tl,
+            "lon": asset.lon_tl
+        })
+        
+    return arus
+
+@app.get("/api/acoustic/activity/hourly")
+def get_hourly_activity(
+    survey_id: int,
+    aru_id: Optional[int] = None,
+    session: Session = Depends(get_session)
+):
+    """
+    Returns hourly aggregation of acoustic detections.
+    """
+    # Fetch detections for this asset
+    query = select(AcousticDetection, Survey)\
+        .join(MediaAsset, AcousticDetection.asset_id == MediaAsset.id)\
+        .join(Survey, MediaAsset.survey_id == Survey.id)\
+        .where(Survey.id == survey_id)
+        
+    if aru_id:
+        query = query.where(MediaAsset.id == aru_id)
+        
+    detections = session.exec(query).all()
+    
+    # Initialize 24 hour buckets
+    hourly_counts = {h: 0 for h in range(24)}
+    
+    for det, survey in detections:
+        # Use survey date + start_time to determine hour
+        base_time = survey.date
+        det_time = base_time + timedelta(seconds=det.start_time)
+        hour = det_time.hour
+        hourly_counts[hour] += 1
+
+    chart_data = []
+    for h in range(24):
+        if h == 0: label = "12am"
+        elif h == 12: label = "12pm"
+        elif h > 12: label = f"{h-12}pm"
+        else: label = f"{h}am"
+        
+        chart_data.append({
+            "hour": h,
+            "count": hourly_counts[h],
+            "label": label
+        })
+        
+    return chart_data
+
+
+@app.get("/api/arus/{aru_id}/detections")
+def get_aru_detections(
+    aru_id: int,
+    days: int = 7,
+    survey_ids: Optional[str] = None,
+    session: Session = Depends(get_session)
+):
+    """
+    Returns all acoustic detections for a specific ARU.
+    Respects date filter and survey filter.
+    """
+    cutoff_date = date.today() - timedelta(days=days)
+    
+    # Build query
+    query = (
+        select(AcousticDetection, MediaAsset, Survey)
+        .join(MediaAsset, AcousticDetection.asset_id == MediaAsset.id)
+        .join(Survey, MediaAsset.survey_id == Survey.id)
+        .where(MediaAsset.aru_id == aru_id)
+        .where(Survey.date >= cutoff_date)
+    )
+    
+    # Apply survey filter if provided
+    if survey_ids:
+        try:
+            ids = [int(x) for x in survey_ids.split(",") if x.strip()]
+            if ids:
+                query = query.where(Survey.id.in_(ids))
+        except ValueError:
+            pass
+    
+    results = session.exec(query).all()
+    
+    detections = []
+    for det, asset, survey in results:
+        det_time = survey.date + timedelta(seconds=det.start_time)
+        detections.append({
+            "id": det.id,
+            "species": det.class_name,
+            "confidence": det.confidence,
+            "start_time": det.start_time,
+            "end_time": det.end_time,
+            "timestamp": det_time.isoformat(),
+            "audio_url": f"/static/uploads/survey_{survey.id}/audio/{Path(asset.file_path).name}",
+            "survey_id": survey.id,
+            "survey_name": survey.name
+        })
+    
+    return detections
+
+@app.get("/api/stats/species_history")
+def get_species_history(
+    species_name: str,
+    days: int = 7,
+    type: str = "visual",
+    session: Session = Depends(get_session)
+):
+    """
+    Returns daily counts for a specific species.
+    """
+    # Fix: To include today, we need to shift the window.
+    # range(days) means we get N days. 
+    # If we want the last one to be today, start = today - (days - 1)
+    cutoff_date = date.today() - timedelta(days=days - 1)
+    
+    if type == "visual":
+        Model = VisualDetection
+    else:
+        Model = AcousticDetection
+        
+    query = (
+        select(func.date(Survey.date), func.count(Model.id))
+        .join(MediaAsset, Model.asset_id == MediaAsset.id)
+        .join(Survey, MediaAsset.survey_id == Survey.id)
+        .where(Model.class_name == species_name)
+        .where(Survey.date >= cutoff_date)
+        .group_by(func.date(Survey.date))
+        .order_by(func.date(Survey.date))
+    )
+    
+    results = session.exec(query).all()
+    
+    # Fill in missing dates
+    data_map = {r[0]: r[1] for r in results}
+    
+    chart_data = []
+    for i in range(days):
+        d = cutoff_date + timedelta(days=i)
+        d_str = d.isoformat()
+        
+        # Format label
+        label = d.strftime("%d %b") # 04 Feb
+        
+        count = 0
+        # Check if date string matches typical SQL output
+        # SQLite func.date returns YYYY-MM-DD
+        if d_str in data_map:
+            count = data_map[d_str]
+            
+        chart_data.append({
+            "date": d_str,
+            "label": label,
+            "count": count
+        })
+        
+    return chart_data
+
+
+@app.get("/api/species_list")
+def get_species_list(
+    type: str = "visual",
+    session: Session = Depends(get_session)
+):
+    """Returns list of all unique species detected"""
+    if type == "visual":
+        Model = VisualDetection
+    else:
+        Model = AcousticDetection
+        
+    query = select(func.distinct(Model.class_name)).order_by(Model.class_name)
+    results = session.exec(query).all()
+    return results
+
+
+@app.get("/api/settings")
+def get_settings(session: Session = Depends(get_session)):
+    settings = session.get(SystemSettings, 1)
+    if not settings:
+        settings = SystemSettings(id=1)
+        session.add(settings)
+        session.commit()
+        session.refresh(settings)
+    return settings
+
+@app.post("/api/settings")
+def update_settings(new_settings: SystemSettings, session: Session = Depends(get_session)):
+    settings = session.get(SystemSettings, 1)
+    if not settings:
+        settings = SystemSettings(id=1)
+    
+    settings.min_confidence = new_settings.min_confidence
+    settings.default_lat = new_settings.default_lat
+    settings.default_lon = new_settings.default_lon
+    
+    session.add(settings)
+    session.commit()
+    session.refresh(settings)
+    return settings
+
+@app.post("/api/settings/upload-model")
+async def upload_model_weights(
+    file: UploadFile = File(...),
+    type: str = Form(...), # 'acoustic' or 'visual'
+    session: Session = Depends(get_session)
+):
+    """
+    Uploads a new model weights file and updates settings.
+    """
+    settings = session.get(SystemSettings, 1)
+    if not settings:
+        settings = SystemSettings(id=1)
+        session.add(settings)
+        session.commit()
+
+    # Define path
+    # backend/weights directory
+    weights_dir = BASE_DIR / "weights"
+    weights_dir.mkdir(exist_ok=True)
+    
+    filename = file.filename
+    file_path = weights_dir / filename
+    
+    with open(file_path, "wb") as buffer:
+        content = await file.read()
+        buffer.write(content)
+        
+    # Update DB path
+    if type == "visual":
+        settings.visual_model_path = str(file_path)
+    elif type == "acoustic":
+        settings.acoustic_model_path = str(file_path)
+        
+    session.add(settings)
+    session.commit()
+    
+    return {"message": "Model uploaded successfully", "path": str(file_path)}
+
+
+# --- Fusion API Endpoints ---
+from app.fusion import (
+    get_species_color_mapping,
+    find_overlapping_arus,
+    generate_fusion_report,
+    DEFAULT_SPECIES_COLOR_MAPPING
+)
+
+
+@app.get("/api/settings/species_colors")
+def get_species_colors_mapping(session: Session = Depends(get_session)):
+    """
+    Returns the species-to-color mapping.
+    """
+    mapping = get_species_color_mapping(session)
+    return {"mapping": mapping}
+
+
+@app.post("/api/settings/species_colors")
+def update_species_colors_mapping(
+    mapping: dict,
+    session: Session = Depends(get_session)
+):
+    """
+    Updates the species-to-color mapping.
+    Expected format: {"white": ["Great Egret", ...], "black": ["Oriental Darter", ...]}
+    """
+    settings = session.get(SystemSettings, 1)
+    if not settings:
+        settings = SystemSettings(id=1)
+    
+    settings.species_color_mapping = json.dumps(mapping)
+    session.add(settings)
+    session.commit()
+    session.refresh(settings)
+    
+    return {"message": "Species color mapping updated", "mapping": mapping}
+
+
+@app.get("/api/fusion/overlapping")
+def get_overlapping_arus(
+    survey_id: int,
+    session: Session = Depends(get_session)
+):
+    """
+    Returns ARUs that overlap with the given survey's bounding box.
+    """
+    arus = find_overlapping_arus(session, survey_id)
+    return {
+        "survey_id": survey_id,
+        "overlapping_arus": [
+            {"id": aru.id, "name": aru.name, "lat": aru.lat, "lon": aru.lon}
+            for aru in arus
+        ]
+    }
+
+
+@app.get("/api/fusion/report")
+def get_fusion_report(
+    visual_survey_id: int,
+    acoustic_survey_id: Optional[int] = None,
+    aru_id: Optional[int] = None,
+    session: Session = Depends(get_session)
+):
+    """
+    Generate a combined analysis report for overlapping survey/ARU data.
+    
+    Args:
+        visual_survey_id: The drone/visual survey ID (required)
+        acoustic_survey_id: The acoustic survey ID (optional)
+        aru_id: The ARU ID for acoustic detections (optional, used if acoustic_survey_id not provided)
+    """
+    report = generate_fusion_report(session, visual_survey_id, acoustic_survey_id, aru_id)
+    return report
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")

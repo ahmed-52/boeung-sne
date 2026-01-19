@@ -4,6 +4,16 @@ from datetime import datetime
 
 
 
+class ARU(SQLModel, table=True):
+    """Acoustic Recording Unit - predefined or custom locations"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    lat: float
+    lon: float
+    
+    # Relationships
+    media_assets: List["MediaAsset"] = Relationship(back_populates="aru")
+
 
 class Survey(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -26,12 +36,16 @@ class MediaAsset(SQLModel, table=True):
     lat_br: Optional[float] = None
     lon_br: Optional[float] = None
     # ---------------------------------------
+    
+    # ARU link for acoustic recordings
+    aru_id: Optional[int] = Field(default=None, foreign_key="aru.id")
 
     is_processed: bool = False
     is_validated: bool = False  
 
     # Relationships
     survey: Survey = Relationship(back_populates="media")
+    aru: Optional[ARU] = Relationship(back_populates="media_assets")
     visual_detections: List["VisualDetection"] = Relationship(back_populates="asset")
     acoustic_detections: List["AcousticDetection"] = Relationship(back_populates="asset")
 
@@ -72,4 +86,27 @@ class AcousticDetection(SQLModel, table=True):
     is_human_reviewed: bool = True
     corrected_class: Optional[str] = None
 
+    # Absolute timestamp of the detection
+    absolute_start_time: Optional[datetime] = None
+
     asset: MediaAsset = Relationship(back_populates="acoustic_detections")
+
+
+class SystemSettings(SQLModel, table=True):
+    """
+    Stores global configuration.
+    Logic: We will always use the row with id=1.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    min_confidence: float = 0.25
+    default_lat: float = 11.406949  # Boeung Sne
+    default_lon: float = 105.394883
+    
+    # Path to custom weights (optional)
+    # If None, use default 'BirdNET_GLOBAL_6K_V2.4_Model_FP32.tflite' or 'best.pt'
+    acoustic_model_path: Optional[str] = None
+    visual_model_path: Optional[str] = None
+    
+    # JSON string storing species-to-color mappings for fusion inference
+    # Format: {"white": ["Great Egret", ...], "black": ["Oriental Darter", ...]}
+    species_color_mapping: Optional[str] = None

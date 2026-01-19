@@ -1,93 +1,98 @@
-import React, { useEffect, useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend } from 'recharts';
+import React, { useMemo } from 'react';
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    PieChart, Pie, Cell, Legend
+} from 'recharts';
 
-export const VocalActivityChart = ({ days, surveyId }) => {
-    const [data, setData] = useState([]);
+// Helper to aggregate detections by date
+const processTimelineData = (detections, days) => {
+    if (!detections || detections.length === 0) return [];
 
-    useEffect(() => {
-        const fetchAcoustic = async () => {
-            try {
-                const params = new URLSearchParams({ days });
-                if (surveyId) params.append("survey_id", surveyId);
+    const now = new Date();
+    const data = [];
 
-                const res = await fetch(`/api/stats/acoustic?${params.toString()}`);
-                if (res.ok) {
-                    const stats = await res.json();
-                    setData(stats);
-                }
-            } catch (e) { console.error(e) }
-        };
-        fetchAcoustic();
-    }, [days, surveyId]);
-
-    if (!data || data.length === 0) {
-        return (
-            <div className="w-full h-full p-6 flex flex-col">
-                <h3 className="text-slate-800 text-lg font-semibold tracking-tight mb-4">Acoustic Activity</h3>
-                <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                    <span className="text-slate-400 text-sm">No acoustic data found</span>
-                </div>
-            </div>
-        )
+    // Initialize last N days with 0
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        data.push({
+            date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            fullDate: d.toDateString(),
+            count: 0
+        });
     }
 
-    return (
-        <div className="w-full h-full p-6 flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-slate-800 text-lg font-semibold tracking-tight">Acoustic Class Distribution</h3>
-            </div>
-            <div className="w-full flex-1">
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data} layout="vertical" margin={{ left: 40 }}>
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                        <XAxis type="number" hide />
-                        <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} stroke="#64748b" />
-                        <Tooltip cursor={{ fill: 'transparent' }} />
-                        <Bar dataKey="value" fill="#8B5CF6" radius={[0, 4, 4, 0]} barSize={20} />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
-    );
+    // Count detections
+    detections.forEach(d => {
+        const date = new Date(d.timestamp).toDateString();
+        const item = data.find(i => i.fullDate === date);
+        if (item) {
+            item.count++;
+        }
+    });
+
+    return data;
 };
 
-export const WeeklyActivityChart = ({ days, surveyId }) => {
-    const [data, setData] = useState([]);
+// Helper to aggregate species
+const processSpeciesData = (detections) => {
+    if (!detections || detections.length === 0) return [];
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const params = new URLSearchParams({ days });
-                if (surveyId) params.append("survey_id", surveyId);
+    const counts = {};
+    detections.forEach(d => {
+        const species = d.species || "Unknown";
+        counts[species] = (counts[species] || 0) + 1;
+    });
 
-                const res = await fetch(`/api/stats/daily?${params.toString()}`);
-                if (res.ok) setData(await res.json());
-            } catch (e) {
-                console.error("Failed to fetch daily stats", e);
-            }
-        };
-        fetchStats();
-    }, [days, surveyId]);
+    return Object.entries(counts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5); // Top 5
+};
+
+const COLORS = ['#0d9488', '#0ea5e9', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+export const WeeklyActivityChart = ({ days, visualDetections }) => {
+    const data = useMemo(() => processTimelineData(visualDetections, days), [visualDetections, days]);
 
     return (
-        <div className="w-full h-full p-6 flex flex-col">
-            <h3 className="text-slate-800 text-lg font-semibold tracking-tight mb-4">Detection Trend</h3>
-            <div className="w-full flex-1 min-h-[150px]">
+        <div className="w-full h-full flex flex-col">
+            <h3 className="text-sm font-semibold text-slate-700 px-4 pt-3 mb-2">Activity Trend</h3>
+            <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data}>
+                    <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#F2994A" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="#F2994A" stopOpacity={0} />
+                                <stop offset="5%" stopColor="#0d9488" stopOpacity={0.1} />
+                                <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                        <XAxis dataKey="day" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-                        <Tooltip
-                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                            cursor={{ stroke: '#cbd5e1' }}
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis
+                            dataKey="date"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94a3b8', fontSize: 10 }}
+                            dy={5}
                         />
-                        <Area type="monotone" dataKey="count" stroke="#F2994A" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+                        <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94a3b8', fontSize: 10 }}
+                        />
+                        <Tooltip
+                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            itemStyle={{ color: '#0f172a', fontSize: '12px', fontWeight: 'bold' }}
+                            labelStyle={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}
+                        />
+                        <Area
+                            type="monotone"
+                            dataKey="count"
+                            stroke="#0d9488"
+                            strokeWidth={2}
+                            fillOpacity={1}
+                            fill="url(#colorCount)"
+                        />
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
@@ -95,48 +100,43 @@ export const WeeklyActivityChart = ({ days, surveyId }) => {
     );
 };
 
-export const SpeciesDistributionChart = ({ days, surveyId }) => {
-    const [data, setData] = useState([]);
-
-    useEffect(() => {
-        const fetchSpecies = async () => {
-            try {
-                const params = new URLSearchParams({ days });
-                if (surveyId) params.append("survey_id", surveyId);
-
-                const res = await fetch(`/api/stats/species?${params.toString()}`);
-                if (res.ok) {
-                    const stats = await res.json();
-                    setData(stats.slice(0, 5));
-                }
-            } catch (e) { console.error(e) }
-        };
-        fetchSpecies();
-    }, [days, surveyId]);
-
-    const COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EC4899'];
+export const SpeciesDistributionChart = ({ visualDetections }) => {
+    const data = useMemo(() => processSpeciesData(visualDetections), [visualDetections]);
 
     return (
-        <div className="w-full h-full p-6 flex flex-col">
-            <h3 className="text-slate-800 text-lg font-semibold tracking-tight mb-2">Species Distribution</h3>
-            <div className="w-full flex-1">
-                <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={data}
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                        >
-                            {data.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                    </PieChart>
-                </ResponsiveContainer>
+        <div className="w-full h-full flex flex-col">
+            <h3 className="text-sm font-semibold text-slate-700 px-4 pt-3 mb-2">Species Distribution</h3>
+            <div className="flex-1 min-h-0 flex items-center justify-center">
+                {data.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie
+                                data={data}
+                                innerRadius={45}
+                                outerRadius={65}
+                                paddingAngle={2}
+                                dataKey="value"
+                            >
+                                {data.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                itemStyle={{ color: '#0f172a', fontSize: '12px' }}
+                            />
+                            <Legend
+                                layout="vertical"
+                                verticalAlign="middle"
+                                align="right"
+                                iconSize={8}
+                                wrapperStyle={{ fontSize: '11px', color: '#64748b' }}
+                            />
+                        </PieChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="text-slate-400 text-xs text-center">No data available</div>
+                )}
             </div>
         </div>
     );

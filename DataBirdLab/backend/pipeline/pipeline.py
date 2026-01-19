@@ -1,78 +1,52 @@
-import os
-from sqlmodel import Session
-from app.database import engine
-from app.models import MediaAsset
-from .drone.slicer import process_orthomosaic
-from .drone.detector import run_inference_for_survey
+from abc import ABC, abstractmethod
+from typing import Any, Dict
+
+# from .drone.drone import DronePipeline
 
 
-STATIC_TILES_DIR = "static/tiles"
+class Pipeline(ABC):
+    def __init__(self,  config: Dict[str, Any]):
+        self.config = config
 
-def run_drone_pipeline(survey_id: int, orthomosaic_path: str):
-    """
-    The Master Function.
-    App.py calls this in the background.
-    """
-    print(f"[Pipeline] Starting Drone Pipeline for Survey #{survey_id}")
-    print(f" [Pipeline] Input: {orthomosaic_path}")
-    print("[Stage 1] Slicing Orthomosaic...")
-    
-    # This creates the physical files in 'static/tiles/survey_X'
-    # And returns a list of metadata dicts
+    @abstractmethod
+    def ingest(self, source: Any) -> Any:
+        """Fetch or load raw data."""
+        pass
 
-    # Note: process_orthomosaic returns paths relative to what we passed or constructed.
-    # We want absolute paths for writing (safest), but we might want relative for DB.
-    # Let's use absolute for the output_dir to be safe with CWD.
-    from pathlib import Path
-    # backend/static/tiles
-    # Assuming this file is in backend/pipeline/, ... relative paths are tricky.
-    # Let's rely on CWD being 'backend/' as established by app startup.
-    
-    assets_metadata = process_orthomosaic(
-        input_path=orthomosaic_path, 
-        output_dir=STATIC_TILES_DIR, 
-        survey_id=survey_id
-    )
-    
-    if not assets_metadata:
-        print("❌ [Stage 1] No tiles generated. Check the orthomosaic file.")
-        return
+    @abstractmethod
+    def transform(self, data: Any) -> Any:
+        """Clean, pre-process, or format the data."""
+        pass
 
-    print(f"[Stage 1] Generated {len(assets_metadata)} tiles.")
+    @abstractmethod
+    def run_inference(self, processed_data: Any) -> Any:
+        """Apply models or logic to the data."""
+        pass
+
+    @abstractmethod
+    def save(self, results: Any) -> None:
+        """Persist results to a database or storage."""
+        pass
 
 
-    # STAGE 2: REGISTRATION (Saving Tiles to Database)
+class PipelineManager:
+    def __init__(self, pipeline_type: str):
+        if pipeline_type == "drone":
+            from .drone.drone import DronePipeline
+            self.pipeline = DronePipeline()
+        elif pipeline_type == "birdnet":
+            from .birdnet.birdnet import BirdNetPipeline
+            self.pipeline = BirdNetPipeline()
+        else:
+            raise ValueError(f"Unknown pipeline type: {pipeline_type}")
 
-    print("[Stage 2] Registering assets in Database...")
-    
-    with Session(engine) as session:
-        for meta in assets_metadata:
-            # meta["file_path"] comes from slicer. 
-            # If slicer uses os.path.join("static/tiles", "1", "img.jpg"), we get that.
-            # We want "/static/tiles/1/img.jpg" for the frontend.
-            
-            p = meta["file_path"]
-            if not p.startswith("/"):
-                p = "/" + p
-                
-            # Create the Database Row
-            new_asset = MediaAsset(
-                survey_id=survey_id,
-                file_path=meta["file_path"],
-                lat_tl=meta["lat_tl"],
-                lon_tl=meta["lon_tl"],
-                lat_br=meta["lat_br"],
-                lon_br=meta["lon_br"],
-                is_processed=False
-            )
-            session.add(new_asset)
-        
-        # Save all rows
-        session.commit()
-    
-    print("[Stage 2] Assets saved to DB.")
-    print("[Stage 3] Running Inference Engine...")
-    
-    run_inference_for_survey(survey_id)
+    def run_survey_processing(self, survey_id: int, input_path: str, output_dir: str = None, aru_id: int = None):
+        assets_metadata = self.pipeline.transform(
+            survey_id=survey_id,
+            input_path=input_path,
+            output_dir=output_dir,
+            aru_id=aru_id
+        )
+        self.pipeline.save(survey_id, assets_metadata)
 
-    print(f"[Pipeline] Survey #{survey_id} Processing Complete!")
+        self.pipeline.run_inference(survey_id=survey_id)
